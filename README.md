@@ -285,3 +285,10 @@ Los entry points representan los puntos de entrada de la aplicación o el inicio
 Este módulo es el más externo de la arquitectura, es el encargado de ensamblar los distintos módulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma automática, inyectando en éstos instancias concretas de las dependencias declaradas. Además inicia la aplicación (es el único módulo del proyecto donde encontraremos la función public static void main(String[] args).
 
 **Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**
+
+# Contacto
+Si tiene alguna duda o necesita más información, puede comunicarse conmigo a través de los siguientes medios:
+
+- **Correo:** [juanesnilarra@outlook.com](mailto:juanesnilarra@outlook.com)  
+- **WhatsApp:** [+57 304 241 2499](https://wa.me/573042412499)
+
