@@ -1,10 +1,250 @@
-# Proyecto Base Implementando Clean Architecture
+# Franchise API
+
+## Requisitos previos
+Para desplegar la API **Franchise**, aseg√∫rese de tener instalado lo siguiente:
+
+- **Java 17** o una versi√≥n superior.
+- **Gradle 8.8** o una versi√≥n superior.
+
+## Despliegue
+Siga estos pasos para ejecutar la API:
+
+1. Clone el repositorio:
+   ```sh
+   git clone <URL_DEL_REPOSITORIO>
+   cd franchise-api
+   ```
+
+2. Compile y construya el proyecto con Gradle:
+   ```sh
+   ./gradlew build
+   ```
+   *(En Windows, use `gradlew.bat build`)*
+
+3. Ejecute la aplicaci√≥n:
+   ```sh
+   ./gradlew bootRun
+   ```
+
+4. La API estar√° disponible en:
+   ```
+   http://localhost:8080
+   ```
+
+## Configuraci√≥n
+Se debe tener en cuenta las siguientes variables de configuraci√≥n, que deben ubicarse en el archivo `application.yaml` en la ruta:
+```
+applications/app-service/src/main/resources/application.yaml
+```
+En el atributo `adapters.r2dbc`:
+
+```yaml
+adapters:
+  r2dbc:
+    host: "franchisesdatabase.cf82ye4wwyn5.us-east-1.rds.amazonaws.com"
+    port: 5432
+    database: "franchisesDataBase"
+    schema: "franchisesSchema"
+    username: "postgres"
+    password: "${DB_PASSWORD}"
+```
+
+**Nota:** `DB_PASSWORD` debe configurarse como una variable de entorno para mayor seguridad.
+
+## Despliegue de la Base de Datos
+Para desplegar la base de datos, ejecute el siguiente script SQL:
+
+```sql
+CREATE DATABASE "franchisesDataBase";
+
+CREATE SCHEMA IF NOT EXISTS "franchisesSchema";
+
+CREATE TABLE "franchisesSchema"."franchises" (
+    "id" SERIAL PRIMARY KEY,
+    "name" VARCHAR(30) NOT NULL,
+    "createdAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "franchisesSchema"."branches" (
+    "id" SERIAL PRIMARY KEY,
+    "franchiseId" INT NOT NULL,
+    "name" VARCHAR(30) NOT NULL,
+    "address" VARCHAR(100) NOT NULL,
+    "phoneNumber" VARCHAR(14) NOT NULL,
+    "createdAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_branches_franchises FOREIGN KEY ("franchiseId") REFERENCES "franchisesSchema".franchises("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "franchisesSchema"."products" (
+    "id" SERIAL PRIMARY KEY,
+    "name" VARCHAR(30) NOT NULL,
+    "description" VARCHAR(100) NOT NULL,
+    "price" NUMERIC(10,2) NOT NULL,
+    "createdAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "franchisesSchema"."branches_products" (
+    "id" SERIAL PRIMARY KEY,
+    "branchId" INT NOT NULL,
+    "productId" INT NOT NULL,
+    "stock" INT NOT NULL,
+    "createdAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_branches FOREIGN KEY ("branchId") REFERENCES "franchisesSchema".branches("id") ON DELETE CASCADE,
+    CONSTRAINT fk_products FOREIGN KEY ("productId") REFERENCES "franchisesSchema".products("id") ON DELETE CASCADE
+);
+
+-- Trigger para actualizar `updated_at` autom√°ticamente
+CREATE FUNCTION "franchisesSchema".update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."updatedAt" = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_branches
+BEFORE UPDATE ON "franchisesSchema".branches
+FOR EACH ROW
+EXECUTE FUNCTION "franchisesSchema".update_updated_at_column();
+
+CREATE TRIGGER trigger_update_products
+BEFORE UPDATE ON "franchisesSchema".products
+FOR EACH ROW
+EXECUTE FUNCTION "franchisesSchema".update_updated_at_column();
+
+CREATE TRIGGER trigger_update_branches_products
+BEFORE UPDATE ON "franchisesSchema".branches_products
+FOR EACH ROW
+EXECUTE FUNCTION "franchisesSchema".update_updated_at_column();
+```
+
+## Endpoints
+### Health Check
+Para verificar el estado de la API, use el siguiente endpoint:
+```
+GET http://localhost:8080/api/health
+```
+
+### Crear una Franquicia
+Para crear una nueva franquicia, realice una solicitud `POST` al siguiente endpoint:
+```
+POST http://localhost:8080/api/franchise
+```
+**Cuerpo de la petici√≥n (`JSON`):**
+```json
+{
+    "name": "Franchise name"
+}
+```
+
+### Actualizar Nombre de una Franquicia
+Para actualizar el nombre de una franquicia existente, realice una solicitud `PUT` al siguiente endpoint:
+```
+PUT http://localhost:8080/api/franchise/name
+```
+**Cuerpo de la petici√≥n (`JSON`):**
+```json
+{
+    "id": #Franchise  ID#,
+    "name": "New franchise name"
+}
+```
+
+### Crear una Sucursal
+Para crear una nueva sucursal asociada a una franquicia, realice una solicitud `POST` al siguiente endpoint:
+```
+POST http://localhost:8080/api/branch
+```
+**Cuerpo de la petici√≥n (`JSON`):**
+```json
+{
+    "franchiseId": #Franchise ID#,
+    "name": "Branch name",
+    "address": "Branch address",
+    "phoneNumber": "Branch phone number"
+}
+```
+
+### Consultar Productos de una Sucursal
+Para consultar los productos de una sucursal, realice una solicitud `GET` al siguiente endpoint:
+```
+GET http://localhost:8080/api/branchesProducts
+```
+
+### Eliminar un Producto de una Sucursal
+Para eliminar un producto de una sucursal, realice una solicitud `DELETE` al siguiente endpoint:
+```
+DELETE http://localhost:8080/api/branchesProducts
+```
+**Cuerpo de la petici√≥n (`JSON`):**
+```json
+{
+    "branchId": #Branch ID#,
+    "productId": #Product ID#
+}
+```
+
+### Actualizar el Stock de un Producto de una Sucursal
+Para actualizar el stock de un producto en una sucursal, realice una solicitud `PUT` al siguiente endpoint:
+```
+PUT http://localhost:8080/api/branchesProducts/stock
+```
+
+**Cuerpo de la petici√≥n (`JSON`):**
+```json
+{
+    "branchId": #Branch ID#,
+    "productId": #Product ID#,
+    "stock": #New stock#
+}
+```
+
+### Mostrar el Producto con M√°s Stock por Sucursal para una Franquicia Puntual
+Para consultar el producto con m√°s stock por sucursal para una franquicia espec√≠fica, realice una solicitud `GET` al siguiente endpoint:
+```
+GET http://localhost:8080/api/franchise/1/maxStock
+```
+
+### Implementaci√≥n de CI/CD con GitHub Actions y Docker
+
+Actualmente, se est√° utilizando **GitHub Actions** para automatizar el proceso de **compilaci√≥n de la imagen** y **subida al repositorio de Docker Hub**. El flujo de trabajo de CI/CD est√° compuesto por dos etapas principales:
+
+1. **Create environment files**: Esta etapa prepara los archivos de entorno necesarios para la compilaci√≥n.
+2. **Build and push**: En esta etapa, se compila la imagen y se sube al repositorio de Docker Hub.
+
+El archivo de configuraci√≥n de este flujo de trabajo de GitHub Actions se encuentra en el siguiente enlace:
+
+- [GitHub Actions Pipeline](https://github.com/Juanes2499/API-Franchise/blob/main/.github/workflows/apifranchise_github_action_gradle.yaml)
+
+#### Repositorio Docker Hub
+La imagen compilada se sube al siguiente repositorio de Docker Hub:
+
+- [Docker Hub Repository](https://hub.docker.com/repository/docker/juanes2499/nequi-api-franchise/tags)
+
+#### Proceso para Ejecutar un Pipeline
+
+Para ejecutar un pipeline, sigue estos pasos:
+
+1. **Crear una rama** a partir de la rama `main`.
+2. Realiza las modificaciones necesarias en tu c√≥digo.
+3. **Sube los cambios** a la rama creada.
+4. **Crea un pull request** contra la rama `main`.
+5. **Completa el pull request** y realiza el merge.
+6. **Crea un nuevo release** a partir de un nuevo tag.
+7. Finalmente, **publica el release**.
+
+Este flujo asegura que cualquier cambio se automatice, compile y se suba correctamente a Docker Hub.
+
+# Acerca de como esta implementado el proyecto:
 
 ## Antes de Iniciar
 
-Empezaremos por explicar los diferentes componentes del proyectos y partiremos de los componentes externos, continuando con los componentes core de negocio (dominio) y por ˙ltimo el inicio y configuraciÛn de la aplicaciÛn.
+Empezaremos por explicar los diferentes componentes del proyectos y partiremos de los componentes externos, continuando con los componentes core de negocio (dominio) y por √∫ltimo el inicio y configuraci√≥n de la aplicaci√≥n.
 
-Lee el artÌculo [Clean Architecture ó Aislando los detalles](https://medium.com/bancolombia-tech/clean-architecture-aislando-los-detalles-4f9530f35d7a)
+Lee el art√≠culo [Clean Architecture - Aislando los detalles](https://medium.com/bancolombia-tech/clean-architecture-aislando-los-detalles-4f9530f35d7a)
 
 # Arquitectura
 
@@ -12,11 +252,11 @@ Lee el artÌculo [Clean Architecture ó Aislando los detalles](https://medium.com/
 
 ## Domain
 
-Es el mÛdulo m·s interno de la arquitectura, pertenece a la capa del dominio y encapsula la lÛgica y reglas del negocio mediante modelos y entidades del dominio.
+Es el m√≥dulo m√°s interno de la arquitectura, pertenece a la capa del dominio y encapsula la l√≥gica y reglas del negocio mediante modelos y entidades del dominio.
 
 ## Usecases
 
-Este mÛdulo gradle perteneciente a la capa del dominio, implementa los casos de uso del sistema, define lÛgica de aplicaciÛn y reacciona a las invocaciones desde el mÛdulo de entry points, orquestando los flujos hacia el mÛdulo de entities.
+Este m√≥dulo gradle perteneciente a la capa del dominio, implementa los casos de uso del sistema, define l√≥gica de aplicaci√≥n y reacciona a las invocaciones desde el m√≥dulo de entry points, orquestando los flujos hacia el m√≥dulo de entities.
 
 ## Infrastructure
 
@@ -24,9 +264,9 @@ Este mÛdulo gradle perteneciente a la capa del dominio, implementa los casos de 
 
 En el apartado de helpers tendremos utilidades generales para los Driven Adapters y Entry Points.
 
-Estas utilidades no est·n arraigadas a objetos concretos, se realiza el uso de generics para modelar comportamientos
-genÈricos de los diferentes objetos de persistencia que puedan existir, este tipo de implementaciones se realizan
-basadas en el patrÛn de diseÒo [Unit of Work y Repository](https://medium.com/@krzychukosobudzki/repository-design-pattern-bc490b256006)
+Estas utilidades no est√°n arraigadas a objetos concretos, se realiza el uso de generics para modelar comportamientos
+gen√©ricos de los diferentes objetos de persistencia que puedan existir, este tipo de implementaciones se realizan
+basadas en el patr√≥n de dise√±o [Unit of Work y Repository](https://medium.com/@krzychukosobudzki/repository-design-pattern-bc490b256006)
 
 Estas clases no puede existir solas y debe heredarse su compartimiento en los **Driven Adapters**
 
@@ -38,10 +278,10 @@ interactuar.
 
 ### Entry Points
 
-Los entry points representan los puntos de entrada de la aplicaciÛn o el inicio de los flujos de negocio.
+Los entry points representan los puntos de entrada de la aplicaci√≥n o el inicio de los flujos de negocio.
 
 ## Application
 
-Este mÛdulo es el m·s externo de la arquitectura, es el encargado de ensamblar los distintos mÛdulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma autom·tica, inyectando en Èstos instancias concretas de las dependencias declaradas. Adem·s inicia la aplicaciÛn (es el ˙nico mÛdulo del proyecto donde encontraremos la funciÛn ìpublic static void main(String[] args)î.
+Este m√≥dulo es el m√°s externo de la arquitectura, es el encargado de ensamblar los distintos m√≥dulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma autom√°tica, inyectando en √©stos instancias concretas de las dependencias declaradas. Adem√°s inicia la aplicaci√≥n (es el √∫nico m√≥dulo del proyecto donde encontraremos la funci√≥n public static void main(String[] args).
 
 **Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**

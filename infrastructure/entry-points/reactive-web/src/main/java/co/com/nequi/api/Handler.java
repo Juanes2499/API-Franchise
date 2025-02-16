@@ -22,6 +22,10 @@ public class Handler {
     private  final BranchUseCase branchUseCase;
     private  final BranchProductUseCase branchProductUseCase;
 
+    public Mono<ServerResponse> health(ServerRequest request) {
+        return ServerResponse.ok().bodyValue("Service is up and running");
+    }
+
     public Mono<ServerResponse> createFranchise(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(CreateFranchiseRequestDto.class)
                 .flatMap(dataRequest -> franchiseUseCase.createFranchise(dataRequest.getName()))
