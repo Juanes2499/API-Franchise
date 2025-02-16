@@ -1,5 +1,6 @@
 package co.com.nequi.r2dbc.franchise;
 
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.ReactiveQueryByExampleExecutor;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -18,4 +19,11 @@ public interface FranchiseDataRepository extends ReactiveCrudRepository<Franchis
             FROM "franchisesSchema".franchises
             WHERE "id" = :id\s""")
     Mono<FranchiseData> getFranchiseById(Long id);
+
+    @Modifying
+    @Query(value = """
+            UPDATE "franchisesSchema".franchises
+            SET "name" = :name
+            WHERE "id" = :id""")
+    Mono<Integer> updateFranchiseNameById(String name, Long id);
 }

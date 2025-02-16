@@ -4,6 +4,7 @@ import co.com.nequi.api.dto.CreateFranchiseRequestDto;
 import co.com.nequi.model.branch.dto.CreateBranchRequestDto;
 import co.com.nequi.model.branchproduct.dto.DeleteBranchProductRequestDto;
 import co.com.nequi.model.branchproduct.dto.UpdateStockBranchProductRequestDto;
+import co.com.nequi.model.franchise.dto.UpdateFranchiseNameByIdRequestDto;
 import co.com.nequi.usecase.branch.BranchUseCase;
 import co.com.nequi.usecase.branchproduct.BranchProductUseCase;
 import co.com.nequi.usecase.franchise.FranchiseUseCase;
@@ -59,6 +60,13 @@ public class Handler {
     public Mono<ServerResponse> getBranchProductByBranchIdAndProductId (ServerRequest serverRequest) {
         Long franchiseId = Long.parseLong(serverRequest.pathVariable("franchiseId"));
         return franchiseUseCase.getBranchProductByBranchIdAndProductId(franchiseId)
+                .flatMap(result -> ServerResponse.ok().bodyValue(result))
+                .onErrorResume(e -> ServerResponse.status(500).bodyValue("Internal Error: " + e.getMessage()));
+    }
+
+    public Mono<ServerResponse> updateFranchiseNameById (ServerRequest serverRequest) {
+        return serverRequest.bodyToMono(UpdateFranchiseNameByIdRequestDto.class)
+                .flatMap(franchiseUseCase::udpateFranchiseNameById)
                 .flatMap(result -> ServerResponse.ok().bodyValue(result))
                 .onErrorResume(e -> ServerResponse.status(500).bodyValue("Internal Error: " + e.getMessage()));
     }

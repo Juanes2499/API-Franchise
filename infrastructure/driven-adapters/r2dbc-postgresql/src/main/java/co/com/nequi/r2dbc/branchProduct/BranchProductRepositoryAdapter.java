@@ -6,6 +6,7 @@ import co.com.nequi.model.branchproduct.dto.DeleteBranchProductRequestDto;
 import co.com.nequi.model.branchproduct.dto.UpdateStockBranchProductRequestDto;
 import co.com.nequi.model.branchproduct.gateways.BranchProductGateway;
 import co.com.nequi.model.generalmodel.GeneralModel;
+import co.com.nequi.model.generalmodel.utils.GeneralModelUtils;
 import co.com.nequi.model.product.Product;
 import co.com.nequi.r2dbc.helper.ReactiveAdapterOperations;
 import org.reactivecommons.utils.ObjectMapper;
