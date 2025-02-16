@@ -1,7 +1,6 @@
 package co.com.nequi.model.generalmodel;
 import lombok.*;
 
-@Data
 @Getter
 @Setter
 @NoArgsConstructor

@@ -11,7 +11,6 @@ import java.time.OffsetDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-//@SuperBuilder
 @Builder(toBuilder = true)
 public class Franchise {
     private Long id;

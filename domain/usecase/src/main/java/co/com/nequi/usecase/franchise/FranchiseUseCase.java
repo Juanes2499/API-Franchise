@@ -2,6 +2,7 @@ package co.com.nequi.usecase.franchise;
 import co.com.nequi.model.branchproduct.gateways.BranchProductGateway;
 import co.com.nequi.model.franchise.Franchise;
 import co.com.nequi.model.franchise.dto.GetMaxStockProductPerBranchByFranchiseIdResponseDto;
+import co.com.nequi.model.franchise.dto.UpdateFranchiseNameByIdRequestDto;
 import co.com.nequi.model.generalmodel.GeneralModel;
 import lombok.RequiredArgsConstructor;
 import co.com.nequi.model.franchise.gateways.FranchiseGateway;
@@ -40,4 +41,16 @@ public class FranchiseUseCase {
                 .switchIfEmpty(Mono.empty());
     }
 
+    public Mono<GeneralModel> udpateFranchiseNameById (UpdateFranchiseNameByIdRequestDto updateFranchiseNameByIdRequestDto){
+        Long franchiseId = updateFranchiseNameByIdRequestDto.getId();
+        return franchiseGateway.getFranchiseById(franchiseId)
+                .flatMap(franchiseData -> {
+                    return franchiseGateway.updateFranchiseNameById(updateFranchiseNameByIdRequestDto);
+                }).switchIfEmpty(Mono.just(GeneralModel.builder()
+                        .method("UPDATE")
+                        .message(String.format("Franchise ID %d was not found", franchiseId))
+                        .success(false)
+                        .build()));
+
+    }
 }
