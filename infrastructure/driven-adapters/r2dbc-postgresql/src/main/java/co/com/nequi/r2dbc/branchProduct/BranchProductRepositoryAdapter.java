@@ -18,6 +18,8 @@ import reactor.core.publisher.Mono;
 public class BranchProductRepositoryAdapter extends ReactiveAdapterOperations
         <BranchProduct, BranchProductData, Long, BranchProductDataRepository> implements BranchProductGateway {
 
+    private final GeneralModelUtils generalModelUtils = new GeneralModelUtils();
+
     public BranchProductRepositoryAdapter(BranchProductDataRepository repository, ObjectMapper mapper) {
         super(repository, mapper, d -> mapper.map(d, BranchProduct.class));
     }
@@ -50,9 +52,9 @@ public class BranchProductRepositoryAdapter extends ReactiveAdapterOperations
         return repository.deleteBranchProduct(branchId, productId)
                 .map(branchProductDeleted -> {
                     if (branchProductDeleted == 1) {
-                        return mapToGeneralModel("DELETE", String.format("Product ID %d was successfully delete from Branch ID %d.", branchId, productId), true);
+                        return generalModelUtils.mapToGeneralModel("DELETE", String.format("Product ID %d was successfully delete from Branch ID %d.", branchId, productId), true);
                     }else{
-                        return mapToGeneralModel("DELETE", String.format("Product ID %d was NOT successfully delete from Branch ID %d.", branchId, productId), false);
+                        return generalModelUtils.mapToGeneralModel("DELETE", String.format("Product ID %d was NOT successfully delete from Branch ID %d.", branchId, productId), false);
                     }
                 });
     }
@@ -66,9 +68,9 @@ public class BranchProductRepositoryAdapter extends ReactiveAdapterOperations
         return repository.updateStockBranchProduct(stock, branchId, productId)
                 .map(branchProductStockUpdated -> {
                     if (branchProductStockUpdated == 1) {
-                        return mapToGeneralModel("UPDATE", String.format("The product with ID %d from Branch ID %d was successfully updated with %d units in stock.", branchId, productId, stock), true);
+                        return generalModelUtils.mapToGeneralModel("UPDATE", String.format("The product with ID %d from Branch ID %d was successfully updated with %d units in stock.", branchId, productId, stock), true);
                     }else{
-                        return mapToGeneralModel("UPDATE", String.format("The product with ID %d from Branch ID %d was successfully updated with %d units in stock.", branchId, productId, stock), false);
+                        return generalModelUtils.mapToGeneralModel("UPDATE", String.format("The product with ID %d from Branch ID %d was successfully updated with %d units in stock.", branchId, productId, stock), false);
                     }
                 });
     }
@@ -100,15 +102,6 @@ public class BranchProductRepositoryAdapter extends ReactiveAdapterOperations
                 .stock(branchProductData.getStock())
                 .createdAt(branchProductData.getCreatedAt())
                 .updatedAt(branchProductData.getUpdatedAt())
-                .build();
-    }
-
-    private GeneralModel mapToGeneralModel(String method, String message, Boolean success) {
-
-        return GeneralModel.builder()
-                .method(method)
-                .message(message)
-                .success(success)
                 .build();
     }
 }
